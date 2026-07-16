@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1b4332">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>🐄 Registro Tambo</title>
+  <style>
+    :root {
+      --green-dark:  #1b4332;
+      --green:       #2d6a4f;
+      --green-mid:   #40916c;
+      --green-light: #52b788;
+      --green-pale:  #d8f3dc;
+      --green-bg:    #f0faf3;
+      --white:       #ffffff;
+      --gray-light:  #f1f3f5;
+      --gray:        #adb5bd;
+      --gray-dark:   #495057;
+      --text:        #212529;
+      --danger:      #c0392b;
+      --warning:     #e67e22;
+      --success:     #27ae60;
+      --radius:      16px;
+      --shadow:      0 4px 20px rgba(0,0,0,0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: var(--green-bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-size: 18px;
+    }
+
+    /* ───── SCREENS ───── */
+    .screen { display: none; min-height: 100vh; flex-direction: column; }
+    .screen.active { display: flex; }
+
+    /* ───── HEADER ───── */
+    .header {
+      background: var(--green-dark);
+      color: white;
+      padding: 18px 20px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    }
+    .header-title  { font-size: 22px; font-weight: 700; flex: 1; line-height: 1.2; }
+    .header-sub    { font-size: 13px; opacity: 0.75; font-weight: 400; }
+    .btn-icon {
+      background: rgba(255,255,255,0.15);
+      border: none; color: white;
+      width: 48px; height: 48px;
+      border-radius: 12px; font-size: 22px;
+      cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 0.15s;
+    }
+    .btn-icon:active { background: rgba(255,255,255,0.3); }
+
+    /* ───── BODY ───── */
+    .body { flex: 1; padding: 20px 16px 110px; display: flex; flex-direction: column; gap: 16px; }
+
+    /* ───── CARD ───── */
+    .card { background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+    .card-label { font-size: 13px; font-weight: 700; color: var(--green-mid); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+
+    /* ───── INPUTS ───── */
+    .field-group { display: flex; flex-direction: column; gap: 8px; }
+    .input-large {
+      width: 100%; border: 2.5px solid var(--gray);
+      border-radius: 12px; padding: 16px 18px;
+      font-size: 22px; font-weight: 600;
+      color: var(--text); background: var(--white);
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+    .input-large:focus { border-color: var(--green-light); box-shadow: 0 0 0 4px rgba(82,183,136,0.18); }
+    .input-large::placeholder { color: var(--gray); }
+    .input-large.error { border-color: var(--danger); }
+
+    /* ───── TOGGLE TURNO ───── */
+    .toggle-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .toggle-btn {
+      border: 2.5px solid var(--gray); background: var(--white);
+      border-radius: 14px; padding: 18px 10px;
+      font-size: 18px; font-weight: 700; color: var(--gray-dark);
+      cursor: pointer; text-align: center; transition: all 0.18s;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .toggle-btn .icon { font-size: 30px; }
+    .toggle-btn.active { border-color: var(--green); background: var(--green-pale); color: var(--green-dark); }
+    .toggle-btn.error  { border-color: var(--danger); }
+
+    /* ───── VACAS ───── */
+    .vacas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .vaca-item label { display: block; font-size: 14px; font-weight: 700; color: var(--gray-dark); margin-bottom: 6px; }
+    .total-vacas {
+      background: var(--green-pale); border-radius: 12px;
+      padding: 14px 18px; display: flex;
+      align-items: center; justify-content: space-between;
+    }
+    .total-vacas .label { font-size: 16px; font-weight: 700; color: var(--green-dark); }
+    .total-vacas .value { font-size: 30px; font-weight: 800; color: var(--green-dark); }
+
+    /* ───── USER CHIPS ───── */
+    .user-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .user-chip {
+      background: var(--green-pale); color: var(--green-dark);
+      border: 2px solid var(--green-light); border-radius: 30px;
+      padding: 8px 18px; font-size: 17px; font-weight: 600; cursor: pointer;
+    }
+    .user-chip:active { background: var(--green-light); color: white; }
+
+    /* ───── BTN MAIN ───── */
+    .btn-main {
+      background: var(--green-dark); color: white; border: none;
+      border-radius: 16px; padding: 20px; font-size: 22px; font-weight: 800;
+      cursor: pointer; width: 100%; display: flex;
+      align-items: center; justify-content: center; gap: 10px;
+      transition: background 0.18s, transform 0.1s;
+      box-shadow: 0 4px 16px rgba(27,67,50,0.3); letter-spacing: 0.3px;
+    }
+    .btn-main:active    { background: var(--green-mid); transform: scale(0.98); }
+    .btn-main.success   { background: var(--success); }
+    .btn-main.danger    { background: var(--danger); box-shadow: none; }
+    .btn-main.secondary { background: var(--gray-light); color: var(--text); box-shadow: none; }
+    .btn-main.sm        { font-size: 17px; padding: 14px; }
+
+    /* ───── SUMMARY BAR ───── */
+    .summary-bar {
+      background: var(--green-dark); color: white;
+      padding: 14px 20px; display: flex; flex-wrap: wrap; gap: 10px 20px; font-size: 15px;
+    }
+    .summary-item { display: flex; flex-direction: column; gap: 2px; }
+    .summary-item .s-label { font-size: 11px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.6px; }
+    .summary-item .s-value { font-size: 17px; font-weight: 700; }
+
+    /* ───── DESTINO BUTTONS ───── */
+    .destino-grid { display: flex; flex-direction: column; gap: 12px; }
+    .destino-btn {
+      background: var(--white); border: 2.5px solid var(--gray);
+      border-radius: var(--radius); padding: 18px 20px;
+      display: flex; align-items: center; gap: 16px;
+      cursor: pointer; transition: all 0.18s; width: 100%; text-align: left;
+    }
+    .destino-btn:active { transform: scale(0.98); }
+    .destino-btn.filled { border-color: var(--green-light); background: var(--green-pale); }
+    .destino-btn .d-icon { font-size: 32px; flex-shrink: 0; }
+    .destino-btn .d-info { flex: 1; }
+    .destino-btn .d-name { font-size: 19px; font-weight: 700; color: var(--text); line-height: 1.2; }
+    .destino-btn .d-val  { font-size: 15px; color: var(--gray-dark); margin-top: 3px; }
+    .destino-btn.filled .d-val { color: var(--green-dark); font-weight: 700; }
+    .destino-btn .d-check { font-size: 28px; }
+
+    /* ───── BOTTOM PANEL ───── */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 200;
+    }
+    .overlay.visible { display: block; }
+    .bottom-panel {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--white); border-radius: 24px 24px 0 0;
+      padding: 0 0 40px; z-index: 201;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.2);
+      max-height: 82vh; overflow-y: auto;
+    }
+    .bottom-panel.open { transform: translateY(0); }
+    .panel-handle { width: 44px; height: 5px; background: var(--gray); border-radius: 3px; margin: 12px auto 0; }
+    .panel-header {
+      padding: 20px 24px 16px; display: flex;
+      align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--gray-light);
+    }
+    .panel-title { font-size: 20px; font-weight: 800; color: var(--green-dark); line-height: 1.2; }
+    .panel-close {
+      background: var(--gray-light); border: none; border-radius: 10px;
+      width: 40px; height: 40px; font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .panel-body { padding: 24px; }
+
+    .litros-display {
+      background: var(--green-pale); border: 3px solid var(--green-light);
+      border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 20px;
+    }
+    .litros-display .number { font-size: 72px; font-weight: 900; color: var(--green-dark); line-height: 1; letter-spacing: -2px; }
+    .litros-display .unit   { font-size: 22px; font-weight: 700; color: var(--green-mid); margin-top: 4px; }
+
+    .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .numpad-btn {
+      background: var(--gray-light); border: none; border-radius: 14px;
+      height: 68px; font-size: 26px; font-weight: 700; color: var(--text);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.12s, transform 0.1s;
+    }
+    .numpad-btn:active  { background: var(--gray); transform: scale(0.95); }
+    .numpad-btn.del     { background: #fce4e4; color: var(--danger); font-size: 22px; }
+    .numpad-btn.zero    { grid-column: span 2; }
+    .numpad-btn.decimal { background: var(--green-pale); color: var(--green-dark); }
+
+    /* ───── BOTTOM NAV TABS ───── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--white); border-top: 1.5px solid var(--gray-light);
+      display: grid; grid-template-columns: 1fr 1fr;
+      z-index: 99; box-shadow: 0 -2px 16px rgba(0,0,0,0.1);
+    }
+    .bottom-nav.hidden { display: none; }
+    .nav-tab {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 10px 4px 14px; cursor: pointer; background: none; border: none;
+      color: var(--gray); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.3px; transition: color 0.15s;
+    }
+    .nav-tab .tab-icon { font-size: 26px; line-height: 1; }
+    .nav-tab.active { color: var(--green-dark); }
+
+    /* ───── HISTORIAL CARDS ───── */
+    .hist-card {
+      background: var(--white); border-radius: 14px;
+      padding: 16px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    .hist-top {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; margin-bottom: 8px;
+    }
+    .hist-fecha { font-size: 19px; font-weight: 800; color: var(--text); }
+    .hist-turno {
+      background: var(--green-pale); color: var(--green-dark);
+      border-radius: 8px; padding: 4px 12px;
+      font-size: 14px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
+    }
+    .hist-meta { font-size: 14px; color: var(--gray-dark); margin-bottom: 8px; }
+    .hist-destinos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .hist-tag {
+      background: var(--green-pale); color: var(--green-dark);
+      border-radius: 8px; padding: 5px 10px; font-size: 14px; font-weight: 600;
+    }
+    .hist-total {
+      font-size: 22px; font-weight: 900; color: var(--green-dark);
+      text-align: right;
+    }
+    .hist-sync {
+      font-size: 12px; text-align: right; margin-top: 4px;
+    }
+    .hist-sync.ok { color: var(--success); }
+    .hist-sync.pending { color: var(--warning); }
+
+    /* ───── SYNC BANNER ───── */
+    .sync-banner {
+      background: var(--green-pale); border-radius: 12px;
+      padding: 12px 16px; display: flex;
+      align-items: center; gap: 10px; font-size: 15px; font-weight: 600;
+      color: var(--green-dark);
+    }
+    .sync-banner .count {
+      background: var(--green-dark); color: white;
+      border-radius: 20px; padding: 2px 10px; font-size: 13px;
+    }
+    .sync-banner.warn { background: #fff3cd; color: #7d5a00; }
+    .sync-banner.warn .count { background: var(--warning); }
+
+    /* ───── RECORDS SCREEN ───── */
+    .record-item {
+      background: var(--white); border-radius: 14px;
+      padding: 16px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    .record-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .record-date   { font-size: 17px; font-weight: 800; color: var(--text); }
+    .record-turno  { background: var(--green-pale); color: var(--green-dark); border-radius: 8px; padding: 4px 10px; font-size: 13px; font-weight: 700; }
+    .record-user   { font-size: 14px; color: var(--gray-dark); margin-bottom: 8px; }
+    .record-details { display: flex; flex-wrap: wrap; gap: 6px; }
+    .record-tag     { background: var(--gray-light); border-radius: 8px; padding: 5px 10px; font-size: 14px; font-weight: 600; color: var(--gray-dark); }
+    .record-tag.hi  { background: var(--green-pale); color: var(--green-dark); }
+    .record-total   { font-size: 20px; font-weight: 800; color: var(--green-dark); text-align: right; margin-top: 10px; }
+    .record-delete  { background: #fce4e4; border: none; border-radius: 8px; padding: 8px 12px; font-size: 18px; cursor: pointer; color: var(--danger); }
+
+    .month-header { font-size: 16px; font-weight: 800; color: var(--green-dark); text-transform: uppercase; letter-spacing: 1px; padding: 8px 4px 4px; margin-top: 8px; }
+    .stats-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat-item    { background: var(--white); border-radius: 14px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+    .stat-item .s-num   { font-size: 32px; font-weight: 900; color: var(--green-dark); }
+    .stat-item .s-label { font-size: 13px; color: var(--gray-dark); font-weight: 600; margin-top: 4px; }
+
+    /* ───── MISC ───── */
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--gray-dark); }
+    .empty-state .icon  { font-size: 56px; margin-bottom: 16px; }
+    .empty-state .title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .empty-state .sub   { font-size: 16px; color: var(--gray); }
+    .error-msg  { color: var(--danger); font-size: 15px; font-weight: 600; padding: 6px 4px 0; display: none; }
+    .error-msg.visible { display: block; }
+    .toast {
+      position: fixed; bottom: 90px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--green-dark); color: white;
+      padding: 14px 24px; border-radius: 14px;
+      font-size: 16px; font-weight: 600; z-index: 999;
+      opacity: 0; transition: all 0.3s; white-space: nowrap;
+      box-shadow: var(--shadow); pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .mt-8  { margin-top: 8px; }
+    .mt-12 { margin-top: 12px; }
+    .text-center { text-align: center; }
+
+    @media screen and (max-width: 768px) {
+      .input-large { font-size: 20px !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 1 — DATOS BÁSICOS
+══════════════════════════════════════════ -->
+<div id="screen1" class="screen active">
+  <div class="header">
+    <div>
+      <div class="header-title">🐄 Registro Tambo</div>
+      <div class="header-sub">Completá todos los datos</div>
+    </div>
+  </div>
+  <div class="body">
+
+    <!-- USUARIO -->
+    <div class="card">
+      <div class="card-label">👤 ¿Quién registra?</div>
+      <div class="field-group">
+        <input id="inputUsuario" class="input-large" type="text"
+               placeholder="Escribí tu nombre"
+               autocomplete="off" autocorrect="off" spellcheck="false">
+        <div id="userChips" class="user-chips"></div>
+        <div id="errUsuario" class="error-msg">⚠ Ingresá tu nombre</div>
+      </div>
+    </div>
+
+    <!-- FECHA -->
+    <div class="card">
+      <div class="card-label">📅 Fecha del ordeñe</div>
+      <input id="inputFecha" class="input-large" type="date">
+      <div id="errFecha" class="error-msg">⚠ Seleccioná la fecha</div>
+    </div>
+
+    <!-- TURNO -->
+    <div class="card">
+      <div class="card-label">🕐 Turno</div>
+      <div class="toggle-group">
+        <button class="toggle-btn" id="btnManana" onclick="selectTurno('mañana')">
+          <span class="icon">🌅</span>
+          <span>Ordeñe<br>Mañana</span>
+        </button>
+        <button class="toggle-btn" id="btnTarde" onclick="selectTurno('tarde')">
+          <span class="icon">🌇</span>
+          <span>Ordeñe<br>Tarde</span>
+        </button>
+      </div>
+      <div id="errTurno" class="error-msg">⚠ Elegí el turno</div>
+    </div>
+
+    <!-- VACAS -->
+    <div class="card">
+      <div class="card-label">🐮 Cantidad de vacas</div>
+      <div class="vacas-grid">
+        <div class="vaca-item">
+          <label>Lote Punta</label>
+          <input id="inputPunta" class="input-large" type="number"
+                 min="0" placeholder="0" inputmode="numeric" oninput="calcTotal()">
+        </div>
+        <div class="vaca-item">
+          <label>Lote Cola</label>
+          <input id="inputCola" class="input-large" type="number"
+                 min="0" placeholder="0" inputmode="numeric" oninput="calcTotal()">
+        </div>
+      </div>
+      <div class="total-vacas mt-12">
+        <span class="label">Total vacas</span>
+        <span class="value" id="totalVacas">0</span>
+      </div>
+    </div>
+
+    <button class="btn-main" onclick="irPantalla2()">
+      Seleccionar Destino →
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SCREEN 2 — DESTINOS
+══════════════════════════════════════════ -->
+<div id="screen2" class="screen">
+  <div class="header">
+    <button class="btn-icon" onclick="volverPantalla1()">←</button>
+    <div>
+      <div class="header-title">🥛 Destino de la Leche</div>
+      <div class="header-sub">Tocá cada destino para cargar litros</div>
+    </div>
+  </div>
+  <div class="summary-bar" id="summaryBar"></div>
+  <div class="body">
+    <div class="destino-grid" id="destinoGrid"></div>
+    <div id="errDestinos" class="error-msg text-center">⚠ Cargá al menos un destino con litros</div>
+    <button class="btn-main success" onclick="guardarRegistro()">
+      💾 Guardar Registro
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SCREEN HISTORIAL (TAB)
+══════════════════════════════════════════ -->
+<div id="screenHistorial" class="screen">
+  <div class="header">
+    <div>
+      <div class="header-title">📋 Historial</div>
+      <div class="header-sub" id="histSubtitle">Últimos registros</div>
+    </div>
+    <button class="btn-icon" onclick="exportarExcel()" title="Exportar Excel">📊</button>
+  </div>
+  <div class="body" id="histBody"></div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SCREEN REGISTROS COMPLETO
+══════════════════════════════════════════ -->
+<div id="screenRecords" class="screen">
+  <div class="header">
+    <button class="btn-icon" onclick="showTab('historial')">←</button>
+    <div>
+      <div class="header-title">📂 Todos los Registros</div>
+      <div class="header-sub" id="recordCount"></div>
+    </div>
+    <button class="btn-icon" onclick="exportarExcel()">📊</button>
+  </div>
+  <div class="body" id="recordsBody"></div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     OVERLAY + PANEL INFERIOR
+══════════════════════════════════════════ -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<!-- Panel genérico (numpad) -->
+<div class="bottom-panel" id="bottomPanel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <div class="panel-title" id="panelTitle">Destino</div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body">
+    <div class="litros-display">
+      <div class="number" id="litrosDisplay">0</div>
+      <div class="unit">litros</div>
+    </div>
+    <div class="numpad">
+      <button class="numpad-btn" onclick="numpadPress('7')">7</button>
+      <button class="numpad-btn" onclick="numpadPress('8')">8</button>
+      <button class="numpad-btn" onclick="numpadPress('9')">9</button>
+      <button class="numpad-btn" onclick="numpadPress('4')">4</button>
+      <button class="numpad-btn" onclick="numpadPress('5')">5</button>
+      <button class="numpad-btn" onclick="numpadPress('6')">6</button>
+      <button class="numpad-btn" onclick="numpadPress('1')">1</button>
+      <button class="numpad-btn" onclick="numpadPress('2')">2</button>
+      <button class="numpad-btn" onclick="numpadPress('3')">3</button>
+      <button class="numpad-btn decimal" onclick="numpadPress('.')">.</button>
+      <button class="numpad-btn zero"    onclick="numpadPress('0')">0</button>
+      <button class="numpad-btn del"     onclick="numpadDel()">⌫</button>
+    </div>
+    <button class="btn-main success" onclick="confirmarLitros()">✓ Listo</button>
+  </div>
+</div>
+
+<!-- Panel especial: Tanque Leche -->
+<div class="bottom-panel" id="tanquePanel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <div class="panel-title">🚛 Tanque Leche</div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body">
+    <div class="field-group">
+      <label class="card-label">📟 Caudalímetro (L)</label>
+      <input class="input-large" id="tqCaudalimetro" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0">
+    </div>
+    <div class="field-group" style="margin-top:16px">
+      <label class="card-label">📏 Medición c/regla (L)</label>
+      <input class="input-large" id="tqRegla" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0">
+    </div>
+    <div class="field-group" style="margin-top:16px">
+      <label class="card-label">🧾 Ticket Camión (L)</label>
+      <input class="input-large" id="tqTicket" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0">
+    </div>
+    <button class="btn-main success" style="margin-top:24px" onclick="confirmarTanque()">✓ Confirmar</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     BOTTOM NAV
+══════════════════════════════════════════ -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="nav-tab active" id="tabRegistrar" onclick="switchTab('registrar')">
+    <span class="tab-icon">🐄</span>
+    <span>Registrar</span>
+  </button>
+  <button class="nav-tab" id="tabHistorial" onclick="switchTab('historial')">
+    <span class="tab-icon">📋</span>
+    <span>Historial</span>
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+
+<!-- ══════════════════════════════════════════
+     SCRIPT
+══════════════════════════════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+
+/* ═══════════════════════════════════════
+   CONFIGURACIÓN — poner URL de Apps Script
+   después de deployar en Google Sheets
+═══════════════════════════════════════ */
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwbvnuRB-6TY7r8p-NSaUdJ3uw1zPrQFCCoQfR3dQQQ1IEbsKvsMNKrXp8Fltfviii-/exec';
+
+/* ─── CONSTANTES ─── */
+const STORE_KEY = 'tambo_registros_v2';
+const USERS_KEY = 'tambo_usuarios_v2';
+
+const DESTINOS = [
+  { key: 'tanque',      icon: '🚛', name: 'Tanque Leche' },
+  { key: 'guachera',    icon: '🍼', name: 'Uso p/Guachera' },
+  { key: 'antibiotico', icon: '💊', name: 'Leche con Antibiótico' },
+  { key: 'calostro',    icon: '🌟', name: 'Leche Calostro' },
+];
+
+/* ─── ESTADO ─── */
+let turnoActual = null;
+let panelKey    = null;
+let panelValStr = '';
+let litrosTemp  = { tanque: null, tanque_detalle: null, guachera: null, antibiotico: null, calostro: null };
+
+/* ─── STORAGE ─── */
+const getRecords = ()   => JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+const saveRecords = r   => localStorage.setItem(STORE_KEY, JSON.stringify(r));
+const getUsers   = ()   => JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+const saveUsers  = u    => localStorage.setItem(USERS_KEY, JSON.stringify(u));
+
+/* ─── INIT ─── */
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('inputFecha').value = fmtDateInput(new Date());
+  renderUserChips();
+  // Reintentar sync de pendientes al conectar
+  window.addEventListener('online', retrySyncPending);
+});
+
+/* ─── USUARIOS ─── */
+function renderUserChips() {
+  const chips = document.getElementById('userChips');
+  chips.innerHTML = '';
+  getUsers().slice(-6).reverse().forEach(u => {
+    const b = document.createElement('button');
+    b.className = 'user-chip';
+    b.textContent = u;
+    b.onclick = () => { document.getElementById('inputUsuario').value = u; };
+    chips.appendChild(b);
+  });
+}
+function addUser(name) {
+  const users = getUsers();
+  if (!users.includes(name)) { users.push(name); saveUsers(users); }
+}
+
+/* ─── TURNO ─── */
+function selectTurno(t) {
+  turnoActual = t;
+  document.getElementById('btnManana').classList.toggle('active', t === 'mañana');
+  document.getElementById('btnTarde').classList.toggle('active', t === 'tarde');
+  ['btnManana','btnTarde','errTurno'].forEach(id => {
+    document.getElementById(id).classList.remove('error','visible');
+  });
+}
+
+/* ─── VACAS ─── */
+function calcTotal() {
+  const p = parseFloat(document.getElementById('inputPunta').value) || 0;
+  const c = parseFloat(document.getElementById('inputCola').value)  || 0;
+  document.getElementById('totalVacas').textContent = p + c;
+}
+
+/* ─── VALIDACIÓN Y PASO A PANTALLA 2 ─── */
+function irPantalla2() {
+  let valid = true;
+  const usuario = document.getElementById('inputUsuario').value.trim();
+  const fecha   = document.getElementById('inputFecha').value;
+
+  const setErr = (id, show) => {
+    document.getElementById(id).classList.toggle('visible', show);
+  };
+
+  if (!usuario) {
+    document.getElementById('inputUsuario').classList.add('error');
+    setErr('errUsuario', true); valid = false;
+  } else {
+    document.getElementById('inputUsuario').classList.remove('error');
+    setErr('errUsuario', false);
+  }
+
+  if (!fecha) {
+    document.getElementById('inputFecha').classList.add('error');
+    setErr('errFecha', true); valid = false;
+  } else {
+    document.getElementById('inputFecha').classList.remove('error');
+    setErr('errFecha', false);
+  }
+
+  if (!turnoActual) {
+    document.getElementById('btnManana').classList.add('error');
+    document.getElementById('btnTarde').classList.add('error');
+    setErr('errTurno', true); valid = false;
+  }
+
+  if (!valid) { showToast('⚠ Completá todos los campos'); return; }
+
+  litrosTemp = { tanque: null, tanque_detalle: null, guachera: null, antibiotico: null, calostro: null };
+
+  const punta = parseInt(document.getElementById('inputPunta').value) || 0;
+  const cola  = parseInt(document.getElementById('inputCola').value)  || 0;
+
+  document.getElementById('summaryBar').innerHTML = `
+    <div class="summary-item"><span class="s-label">Usuario</span><span class="s-value">${esc(usuario)}</span></div>
+    <div class="summary-item"><span class="s-label">Fecha</span><span class="s-value">${formatFecha(fecha)}</span></div>
+    <div class="summary-item"><span class="s-label">Turno</span><span class="s-value">${turnoActual === 'mañana' ? '🌅 Mañana' : '🌇 Tarde'}</span></div>
+    <div class="summary-item"><span class="s-label">Vacas</span><span class="s-value">${punta+cola} (P:${punta}/C:${cola})</span></div>
+  `;
+
+  renderDestinos();
+  showScreen('screen2');
+  document.getElementById('bottomNav').classList.add('hidden');
+}
+
+function volverPantalla1() {
+  showScreen('screen1');
+  document.getElementById('bottomNav').classList.remove('hidden');
+}
+
+/* ─── DESTINOS ─── */
+function renderDestinos() {
+  const grid = document.getElementById('destinoGrid');
+  grid.innerHTML = '';
+  DESTINOS.forEach(d => {
+    const val = litrosTemp[d.key];
+    const filled = val !== null;
+    const btn = document.createElement('button');
+    btn.className = 'destino-btn' + (filled ? ' filled' : '');
+    btn.innerHTML = `
+      <span class="d-icon">${d.icon}</span>
+      <span class="d-info">
+        <span class="d-name">${d.name}</span>
+        <span class="d-val">${filled ? val + ' litros cargados' : 'Tocar para cargar litros'}</span>
+      </span>
+      <span class="d-check">${filled ? '✅' : '▶'}</span>
+    `;
+    btn.onclick = () => openPanel(d.key);
+    grid.appendChild(btn);
+  });
+}
+
+/* ─── PANEL ─── */
+function openPanel(key) {
+  panelKey = key;
+  document.getElementById('overlay').classList.add('visible');
+
+  if (key === 'tanque') {
+    // Panel especial Tanque Leche
+    const t = litrosTemp.tanque_detalle || {};
+    document.getElementById('tqCaudalimetro').value = t.caudalimetro != null ? t.caudalimetro : '';
+    document.getElementById('tqRegla').value        = t.regla        != null ? t.regla        : '';
+    document.getElementById('tqTicket').value       = t.ticket       != null ? t.ticket       : '';
+    document.getElementById('tanquePanel').classList.add('open');
+  } else {
+    panelValStr = litrosTemp[key] !== null ? String(litrosTemp[key]) : '';
+    const d = DESTINOS.find(x => x.key === key);
+    document.getElementById('panelTitle').textContent = d.icon + ' ' + d.name;
+    updateLitrosDisplay();
+    document.getElementById('bottomPanel').classList.add('open');
+  }
+}
+function closePanel() {
+  document.getElementById('overlay').classList.remove('visible');
+  document.getElementById('bottomPanel').classList.remove('open');
+  document.getElementById('tanquePanel').classList.remove('open');
+  panelKey = null;
+}
+
+/* ─── CONFIRMAR TANQUE ─── */
+function confirmarTanque() {
+  const c = parseFloat(document.getElementById('tqCaudalimetro').value) || 0;
+  const r = parseFloat(document.getElementById('tqRegla').value)        || 0;
+  const t = parseFloat(document.getElementById('tqTicket').value)       || 0;
+  litrosTemp.tanque_detalle = { caudalimetro: c, regla: r, ticket: t };
+  // Para el total usamos el Caudalímetro (valor oficial); si no hay, el Ticket Camión
+  litrosTemp.tanque = c || t || r;
+  closePanel();
+  renderDestinos();
+  document.getElementById('errDestinos').classList.remove('visible');
+}
+
+/* ─── NUMPAD ─── */
+function numpadPress(ch) {
+  if (ch === '.' && panelValStr.includes('.')) return;
+  if (panelValStr === '0' && ch !== '.') panelValStr = ch;
+  else panelValStr += ch;
+  if (parseFloat(panelValStr) > 9999.9) panelValStr = '9999.9';
+  updateLitrosDisplay();
+}
+function numpadDel() {
+  if (panelValStr.length > 0) { panelValStr = panelValStr.slice(0, -1); updateLitrosDisplay(); }
+}
+function updateLitrosDisplay() {
+  document.getElementById('litrosDisplay').textContent = panelValStr === '' ? '0' : panelValStr;
+}
+function confirmarLitros() {
+  const val = parseFloat(panelValStr);
+  litrosTemp[panelKey] = isNaN(val) ? 0 : val;
+  closePanel();
+  renderDestinos();
+  document.getElementById('errDestinos').classList.remove('visible');
+}
+
+/* ─── GUARDAR ─── */
+function guardarRegistro() {
+  const alguno = Object.values(litrosTemp).some(v => v !== null && v > 0);
+  if (!alguno) {
+    document.getElementById('errDestinos').classList.add('visible');
+    showToast('⚠ Cargá litros en al menos un destino');
+    return;
+  }
+
+  const usuario = document.getElementById('inputUsuario').value.trim();
+  const fecha   = document.getElementById('inputFecha').value;
+  const punta   = parseInt(document.getElementById('inputPunta').value) || 0;
+  const cola    = parseInt(document.getElementById('inputCola').value)  || 0;
+  const total   = Object.values(litrosTemp).reduce((s, v) => s + (v || 0), 0);
+
+  const registro = {
+    id:          Date.now().toString(),
+    timestamp:   new Date().toISOString(),
+    fecha,
+    turno:       turnoActual,
+    usuario,
+    lote_punta:  punta,
+    lote_cola:   cola,
+    total_vacas: punta + cola,
+    litros:      { tanque: litrosTemp.tanque, guachera: litrosTemp.guachera, antibiotico: litrosTemp.antibiotico, calostro: litrosTemp.calostro },
+    tanque_detalle: litrosTemp.tanque_detalle || null,
+    total_litros: total,
+    synced:      false,
+  };
+
+  const records = getRecords();
+  records.push(registro);
+  saveRecords(records);
+  addUser(usuario);
+  renderUserChips();
+
+  // Intentar sincronizar con Google Sheets
+  syncToSheets(registro);
+
+  showToast('✅ Registro guardado');
+
+  // Reset
+  litrosTemp = { tanque: null, tanque_detalle: null, guachera: null, antibiotico: null, calostro: null };
+  turnoActual = null;
+  document.getElementById('btnManana').classList.remove('active');
+  document.getElementById('btnTarde').classList.remove('active');
+  document.getElementById('bottomNav').classList.remove('hidden');
+
+  setTimeout(() => { showTab('historial'); }, 900);
+}
+
+/* ═══════════════════════════════════════
+   GOOGLE SHEETS — sincronización
+═══════════════════════════════════════ */
+async function syncToSheets(registro) {
+  if (!SHEETS_URL || SHEETS_URL === 'APPS_SCRIPT_URL_PLACEHOLDER') return;
+  try {
+    const res = await fetch(SHEETS_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body:    JSON.stringify(registro),
+    });
+    const json = await res.json();
+    if (json.success) {
+      // Marcar como sincronizado
+      const records = getRecords();
+      const idx = records.findIndex(r => r.id === registro.id);
+      if (idx !== -1) { records[idx].synced = true; saveRecords(records); }
+      showToast('☁️ Guardado en Google Sheets');
+    }
+  } catch (e) {
+    console.warn('Sync pendiente, se reintentará al conectar:', e.message);
+  }
+}
+
+async function retrySyncPending() {
+  if (!SHEETS_URL || SHEETS_URL === 'APPS_SCRIPT_URL_PLACEHOLDER') return;
+  const records = getRecords();
+  const pending = records.filter(r => !r.synced);
+  if (!pending.length) return;
+  showToast(`🔄 Sincronizando ${pending.length} registro(s) pendiente(s)…`);
+  for (const r of pending) { await syncToSheets(r); }
+}
+
+/* ═══════════════════════════════════════
+   HISTORIAL — últimos 20 registros
+═══════════════════════════════════════ */
+function renderHistorial() {
+  const all     = getRecords().slice().reverse();
+  const last20  = all.slice(0, 20);
+  const pending = all.filter(r => !r.synced).length;
+  const body    = document.getElementById('histBody');
+
+  document.getElementById('histSubtitle').textContent =
+    `${all.length} registro${all.length !== 1 ? 's' : ''} guardado${all.length !== 1 ? 's' : ''}`;
+
+  if (!last20.length) {
+    body.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🐄</div>
+        <div class="title">Sin registros todavía</div>
+        <div class="sub">Los registros aparecerán aquí después de guardar</div>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+
+  // Banner sync
+  if (SHEETS_URL && SHEETS_URL !== 'APPS_SCRIPT_URL_PLACEHOLDER') {
+    if (pending > 0) {
+      html += `<div class="sync-banner warn">
+        ☁️ <span class="count">${pending}</span> pendiente${pending>1?'s':''} de sync con Sheets
+        <button onclick="retrySyncPending()" style="margin-left:auto;background:var(--warning);color:white;border:none;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:13px">Reintentar</button>
+      </div>`;
+    } else {
+      html += `<div class="sync-banner">✅ Todo sincronizado con Google Sheets</div>`;
+    }
+  }
+
+  // Resumen mes actual
+  const mesActual = new Date().toISOString().slice(0,7);
+  const delMes = all.filter(r => r.fecha.startsWith(mesActual));
+  if (delMes.length) {
+    const totalMes = delMes.reduce((s,r) => s + r.total_litros, 0);
+    const sumDest  = { tanque:0, guachera:0, antibiotico:0, calostro:0 };
+    delMes.forEach(r => DESTINOS.forEach(d => { sumDest[d.key] += (r.litros[d.key] || 0); }));
+    const destTags = DESTINOS
+      .filter(d => sumDest[d.key] > 0)
+      .map(d => `<span class="hist-tag">${d.icon} ${sumDest[d.key].toFixed(1)} L</span>`)
+      .join('');
+
+    html += `
+      <div class="card">
+        <div class="card-label">📊 ${formatMes(mesActual)}</div>
+        <div class="stats-grid">
+          <div class="stat-item"><div class="s-num">${totalMes.toFixed(1)}</div><div class="s-label">Litros totales</div></div>
+          <div class="stat-item"><div class="s-num">${delMes.length}</div><div class="s-label">Ordeñes</div></div>
+        </div>
+        <div class="hist-destinos mt-12">${destTags}</div>
+      </div>`;
+  }
+
+  // Cards últimos 20
+  last20.forEach(r => {
+    const turnoIcon = r.turno === 'mañana' ? '🌅' : '🌇';
+    const destinos  = DESTINOS
+      .filter(d => r.litros && r.litros[d.key] > 0)
+      .map(d => {
+        if (d.key === 'tanque' && r.tanque_detalle) {
+          const td = r.tanque_detalle;
+          const det = [
+            td.caudalimetro ? `📟 ${td.caudalimetro} L` : '',
+            td.regla        ? `📏 ${td.regla} L`        : '',
+            td.ticket       ? `🧾 ${td.ticket} L`       : '',
+          ].filter(Boolean).join(' · ');
+          return `<span class="hist-tag">${d.icon} ${d.name}: <b>${r.litros[d.key]} L</b>${det ? '<br><small style="font-weight:400;opacity:0.8">' + det + '</small>' : ''}</span>`;
+        }
+        return `<span class="hist-tag">${d.icon} ${d.name}: <b>${r.litros[d.key]} L</b></span>`;
+      })
+      .join('');
+    const syncHtml  = (SHEETS_URL && SHEETS_URL !== 'APPS_SCRIPT_URL_PLACEHOLDER')
+      ? `<div class="hist-sync ${r.synced ? 'ok' : 'pending'}">${r.synced ? '☁️ sincronizado' : '⏳ pendiente sync'}</div>`
+      : '';
+
+    html += `
+      <div class="hist-card">
+        <div class="hist-top">
+          <span class="hist-fecha">${formatFecha(r.fecha)}</span>
+          <span class="hist-turno">${turnoIcon} ${capFirst(r.turno)}</span>
+        </div>
+        <div class="hist-meta">👤 ${esc(r.usuario)} &nbsp;|&nbsp; 🐮 ${r.total_vacas} vacas (P:${r.lote_punta}/C:${r.lote_cola})</div>
+        <div class="hist-destinos">${destinos || '<span style="color:var(--gray);font-size:14px">Sin destinos cargados</span>'}</div>
+        <div class="hist-total">${r.total_litros.toFixed(1)} L total</div>
+        ${syncHtml}
+      </div>`;
+  });
+
+  if (all.length > 20) {
+    html += `<button class="btn-main secondary sm" onclick="showScreen('screenRecords');renderRecords()">
+      Ver todos los ${all.length} registros →
+    </button>`;
+  }
+
+  html += `
+    <button class="btn-main sm" onclick="exportarExcel()">📊 Exportar a Excel</button>
+    <button class="btn-main danger sm" onclick="confirmarBorrarTodo()">🗑 Borrar todos los datos</button>
+  `;
+
+  body.innerHTML = html;
+}
+
+/* ─── PANTALLA REGISTROS COMPLETA ─── */
+function renderRecords() {
+  const records = getRecords().slice().reverse();
+  const body    = document.getElementById('recordsBody');
+  document.getElementById('recordCount').textContent = records.length + ' registros';
+
+  if (!records.length) {
+    body.innerHTML = '<div class="empty-state"><div class="icon">🐄</div><div class="title">Sin registros</div></div>';
+    return;
+  }
+
+  const byMonth = {};
+  records.forEach(r => {
+    const m = r.fecha.slice(0, 7);
+    if (!byMonth[m]) byMonth[m] = [];
+    byMonth[m].push(r);
+  });
+
+  let html = '';
+  Object.keys(byMonth).sort().reverse().forEach(mes => {
+    const mesTotal = byMonth[mes].reduce((s,r) => s + r.total_litros, 0);
+    html += `<div class="month-header">${formatMes(mes)} — ${mesTotal.toFixed(1)} L total</div>`;
+    byMonth[mes].forEach(r => {
+      html += `
+        <div class="record-item">
+          <div class="record-header">
+            <span class="record-date">${formatFecha(r.fecha)}</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span class="record-turno">${r.turno === 'mañana' ? '🌅' : '🌇'} ${capFirst(r.turno)}</span>
+              <button class="record-delete" onclick="eliminarRegistro('${r.id}')">🗑</button>
+            </div>
+          </div>
+          <div class="record-user">👤 ${esc(r.usuario)} · 🐮 ${r.total_vacas} vacas (P:${r.lote_punta}/C:${r.lote_cola})</div>
+          <div class="record-details">
+            ${DESTINOS.filter(d => r.litros && r.litros[d.key] > 0)
+              .map(d => `<span class="record-tag hi">${d.icon} ${d.name}: ${r.litros[d.key]} L</span>`).join('')}
+          </div>
+          <div class="record-total">Total: ${r.total_litros.toFixed(1)} L</div>
+        </div>`;
+    });
+  });
+
+  html += `<button class="btn-main sm" onclick="exportarExcel()">📊 Exportar a Excel</button>`;
+  body.innerHTML = html;
+}
+
+function eliminarRegistro(id) {
+  if (!confirm('¿Eliminar este registro?')) return;
+  saveRecords(getRecords().filter(r => r.id !== id));
+  renderRecords();
+  showToast('Registro eliminado');
+}
+
+function confirmarBorrarTodo() {
+  if (!confirm('⚠ ¿Borrar TODOS los registros? Esta acción no se puede deshacer.')) return;
+  saveRecords([]);
+  renderHistorial();
+  showToast('Datos borrados');
+}
+
+/* ─── EXPORT EXCEL ─── */
+function exportarExcel() {
+  const records = getRecords();
+  if (!records.length) { showToast('Sin registros para exportar'); return; }
+  const rows = records.map(r => ({
+    'Fecha': r.fecha, 'Turno': capFirst(r.turno), 'Usuario': r.usuario,
+    'Lote Punta (vacas)': r.lote_punta, 'Lote Cola (vacas)': r.lote_cola, 'Total Vacas': r.total_vacas,
+    'Tanque Leche (L)': r.litros.tanque||0,
+    'Tanque - Caudalímetro (L)': r.tanque_detalle?.caudalimetro||0,
+    'Tanque - Regla (L)': r.tanque_detalle?.regla||0,
+    'Tanque - Ticket Camión (L)': r.tanque_detalle?.ticket||0,
+    'Guachera (L)': r.litros.guachera||0,
+    'Antibiótico (L)': r.litros.antibiotico||0, 'Calostro (L)': r.litros.calostro||0,
+    'Total Litros (L)': r.total_litros,
+    'Timestamp': r.timestamp ? r.timestamp.slice(0,16).replace('T',' ') : '',
+    'Sync Sheets': r.synced ? 'Sí' : 'Pendiente',
+  }));
+  const ws1 = XLSX.utils.json_to_sheet(rows);
+  ws1['!cols'] = [{wch:12},{wch:10},{wch:16},{wch:18},{wch:18},{wch:12},{wch:18},{wch:16},{wch:18},{wch:14},{wch:16},{wch:18},{wch:14}];
+  const byMonth = {};
+  records.forEach(r => {
+    const m = r.fecha.slice(0,7);
+    if (!byMonth[m]) byMonth[m] = {tanque:0,guachera:0,antibiotico:0,calostro:0,total:0,ordenes:0,vacas:[]};
+    byMonth[m].tanque+=r.litros.tanque||0; byMonth[m].guachera+=r.litros.guachera||0;
+    byMonth[m].antibiotico+=r.litros.antibiotico||0; byMonth[m].calostro+=r.litros.calostro||0;
+    byMonth[m].total+=r.total_litros; byMonth[m].ordenes++;
+    byMonth[m].vacas.push(r.total_vacas);
+  });
+  const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const mensual = Object.keys(byMonth).sort().map(m => {
+    const d=byMonth[m]; const [y,mo]=m.split('-');
+    return {'Mes':MESES[parseInt(mo)-1]+' '+y,'Ordeñes':d.ordenes,
+      'Prom. Vacas':Math.round(d.vacas.reduce((s,v)=>s+v,0)/d.vacas.length),
+      'Tanque Leche (L)':+d.tanque.toFixed(1),'Guachera (L)':+d.guachera.toFixed(1),
+      'Antibiótico (L)':+d.antibiotico.toFixed(1),'Calostro (L)':+d.calostro.toFixed(1),
+      'TOTAL Litros (L)':+d.total.toFixed(1)};
+  }).reverse();
+  const ws2 = XLSX.utils.json_to_sheet(mensual);
+  ws2['!cols'] = [{wch:18},{wch:10},{wch:14},{wch:18},{wch:14},{wch:16},{wch:14},{wch:16}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws1, 'Registros');
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumen Mensual');
+  XLSX.writeFile(wb, `Tambo_${new Date().toISOString().slice(0,10)}.xlsx`);
+  showToast('📊 Excel descargado');
+}
+
+/* ─── NAVEGACIÓN ─── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function switchTab(tab) {
+  document.getElementById('tabRegistrar').classList.toggle('active', tab==='registrar');
+  document.getElementById('tabHistorial').classList.toggle('active', tab==='historial');
+  if (tab==='registrar') { showScreen('screen1'); }
+  else { showScreen('screenHistorial'); renderHistorial(); }
+  document.getElementById('bottomNav').classList.remove('hidden');
+}
+function showTab(tab) { switchTab(tab); }
+
+/* ─── HELPERS ─── */
+function fmtDateInput(d) { return d.toISOString().slice(0,10); }
+function formatFecha(iso) {
+  if (!iso) return '';
+  const [y,m,day]=iso.split('-');
+  const M=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${day} ${M[parseInt(m)-1]} ${y}`;
+}
+function formatMes(ym) {
+  const [y,m]=ym.split('-');
+  const M=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  return M[parseInt(m)-1]+' '+y;
+}
+function capFirst(s) { return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+let toastTimer=null;
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
