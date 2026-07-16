@@ -716,8 +716,8 @@ function confirmarTanque() {
   const r = parseFloat(document.getElementById('tqRegla').value)        || 0;
   const t = parseFloat(document.getElementById('tqTicket').value)       || 0;
   litrosTemp.tanque_detalle = { caudalimetro: c, regla: r, ticket: t };
-  // Para el total usamos el Ticket Camión (valor oficial); si no hay, el mayor de los 3
-  litrosTemp.tanque = t || c || r;
+  // Para el total usamos el Caudalímetro (valor oficial); si no hay, el Ticket Camión
+  litrosTemp.tanque = c || t || r;
   closePanel();
   renderDestinos();
   document.getElementById('errDestinos').classList.remove('visible');
@@ -1011,4 +1011,4 @@ function exportarExcel() {
     'Guachera (L)': r.litros.guachera||0,
     'Antibiótico (L)': r.litros.antibiotico||0, 'Calostro (L)': r.litros.calostro||0,
     'Total Litros (L)': r.total_litros,
-    'Timestamp': r.timestamp ? r.timestamp.slice(0,16).replace('T',' ') 
+    'Timestamp': r.timestamp ? r.timestamp.slice(0,16).replace('T',' ') :
