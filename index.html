@@ -456,6 +456,8 @@
      OVERLAY + PANEL INFERIOR
 ══════════════════════════════════════════ -->
 <div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<!-- Panel genérico (numpad) -->
 <div class="bottom-panel" id="bottomPanel">
   <div class="panel-handle"></div>
   <div class="panel-header">
@@ -482,6 +484,30 @@
       <button class="numpad-btn del"     onclick="numpadDel()">⌫</button>
     </div>
     <button class="btn-main success" onclick="confirmarLitros()">✓ Listo</button>
+  </div>
+</div>
+
+<!-- Panel especial: Tanque Leche -->
+<div class="bottom-panel" id="tanquePanel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <div class="panel-title">🚛 Tanque Leche</div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body">
+    <div class="field-group">
+      <label class="card-label">📟 Caudalímetro (L)</label>
+      <input class="input-large" id="tqCaudalimetro" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0">
+    </div>
+    <div class="field-group" style="margin-top:16px">
+      <label class="card-label">📏 Medición c/regla (L)</label>
+      <input class="input-large" id="tqRegla" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0">
+    </div>
+    <div class="field-group" style="margin-top:16px">
+      <label class="card-label">🧾 Ticket Camión (L)</label>
+      <input class="input-large" id="tqTicket" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0">
+    </div>
+    <button class="btn-main success" style="margin-top:24px" onclick="confirmarTanque()">✓ Confirmar</button>
   </div>
 </div>
 
@@ -529,7 +555,7 @@ const DESTINOS = [
 let turnoActual = null;
 let panelKey    = null;
 let panelValStr = '';
-let litrosTemp  = { tanque: null, guachera: null, antibiotico: null, calostro: null };
+let litrosTemp  = { tanque: null, tanque_detalle: null, guachera: null, antibiotico: null, calostro: null };
 
 /* ─── STORAGE ─── */
 const getRecords = ()   => JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
@@ -613,7 +639,7 @@ function irPantalla2() {
 
   if (!valid) { showToast('⚠ Completá todos los campos'); return; }
 
-  litrosTemp = { tanque: null, guachera: null, antibiotico: null, calostro: null };
+  litrosTemp = { tanque: null, tanque_detalle: null, guachera: null, antibiotico: null, calostro: null };
 
   const punta = parseInt(document.getElementById('inputPunta').value) || 0;
   const cola  = parseInt(document.getElementById('inputCola').value)  || 0;
@@ -659,18 +685,42 @@ function renderDestinos() {
 
 /* ─── PANEL ─── */
 function openPanel(key) {
-  panelKey    = key;
-  panelValStr = litrosTemp[key] !== null ? String(litrosTemp[key]) : '';
-  const d = DESTINOS.find(x => x.key === key);
-  document.getElementById('panelTitle').textContent = d.icon + ' ' + d.name;
-  updateLitrosDisplay();
+  panelKey = key;
   document.getElementById('overlay').classList.add('visible');
-  document.getElementById('bottomPanel').classList.add('open');
+
+  if (key === 'tanque') {
+    // Panel especial Tanque Leche
+    const t = litrosTemp.tanque_detalle || {};
+    document.getElementById('tqCaudalimetro').value = t.caudalimetro != null ? t.caudalimetro : '';
+    document.getElementById('tqRegla').value        = t.regla        != null ? t.regla        : '';
+    document.getElementById('tqTicket').value       = t.ticket       != null ? t.ticket       : '';
+    document.getElementById('tanquePanel').classList.add('open');
+  } else {
+    panelValStr = litrosTemp[key] !== null ? String(litrosTemp[key]) : '';
+    const d = DESTINOS.find(x => x.key === key);
+    document.getElementById('panelTitle').textContent = d.icon + ' ' + d.name;
+    updateLitrosDisplay();
+    document.getElementById('bottomPanel').classList.add('open');
+  }
 }
 function closePanel() {
   document.getElementById('overlay').classList.remove('visible');
   document.getElementById('bottomPanel').classList.remove('open');
+  document.getElementById('tanquePanel').classList.remove('open');
   panelKey = null;
+}
+
+/* ─── CONFIRMAR TANQUE ─── */
+function confirmarTanque() {
+  const c = parseFloat(document.getElementById('tqCaudalimetro').value) || 0;
+  const r = parseFloat(document.getElementById('tqRegla').value)        || 0;
+  const t = parseFloat(document.getElementById('tqTicket').value)       || 0;
+  litrosTemp.tanque_detalle = { caudalimetro: c, regla: r, ticket: t };
+  // Para el total usamos el Ticket Camión (valor oficial); si no hay, el mayor de los 3
+  litrosTemp.tanque = t || c || r;
+  closePanel();
+  renderDestinos();
+  document.getElementById('errDestinos').classList.remove('visible');
 }
 
 /* ─── NUMPAD ─── */
@@ -719,7 +769,8 @@ function guardarRegistro() {
     lote_punta:  punta,
     lote_cola:   cola,
     total_vacas: punta + cola,
-    litros:      { ...litrosTemp },
+    litros:      { tanque: litrosTemp.tanque, guachera: litrosTemp.guachera, antibiotico: litrosTemp.antibiotico, calostro: litrosTemp.calostro },
+    tanque_detalle: litrosTemp.tanque_detalle || null,
     total_litros: total,
     synced:      false,
   };
@@ -736,7 +787,7 @@ function guardarRegistro() {
   showToast('✅ Registro guardado');
 
   // Reset
-  litrosTemp = { tanque: null, guachera: null, antibiotico: null, calostro: null };
+  litrosTemp = { tanque: null, tanque_detalle: null, guachera: null, antibiotico: null, calostro: null };
   turnoActual = null;
   document.getElementById('btnManana').classList.remove('active');
   document.getElementById('btnTarde').classList.remove('active');
@@ -842,7 +893,18 @@ function renderHistorial() {
     const turnoIcon = r.turno === 'mañana' ? '🌅' : '🌇';
     const destinos  = DESTINOS
       .filter(d => r.litros && r.litros[d.key] > 0)
-      .map(d => `<span class="hist-tag">${d.icon} ${d.name}: <b>${r.litros[d.key]} L</b></span>`)
+      .map(d => {
+        if (d.key === 'tanque' && r.tanque_detalle) {
+          const td = r.tanque_detalle;
+          const det = [
+            td.caudalimetro ? `📟 ${td.caudalimetro} L` : '',
+            td.regla        ? `📏 ${td.regla} L`        : '',
+            td.ticket       ? `🧾 ${td.ticket} L`       : '',
+          ].filter(Boolean).join(' · ');
+          return `<span class="hist-tag">${d.icon} ${d.name}: <b>${r.litros[d.key]} L</b>${det ? '<br><small style="font-weight:400;opacity:0.8">' + det + '</small>' : ''}</span>`;
+        }
+        return `<span class="hist-tag">${d.icon} ${d.name}: <b>${r.litros[d.key]} L</b></span>`;
+      })
       .join('');
     const syncHtml  = (SHEETS_URL && SHEETS_URL !== 'APPS_SCRIPT_URL_PLACEHOLDER')
       ? `<div class="hist-sync ${r.synced ? 'ok' : 'pending'}">${r.synced ? '☁️ sincronizado' : '⏳ pendiente sync'}</div>`
@@ -942,77 +1004,11 @@ function exportarExcel() {
   const rows = records.map(r => ({
     'Fecha': r.fecha, 'Turno': capFirst(r.turno), 'Usuario': r.usuario,
     'Lote Punta (vacas)': r.lote_punta, 'Lote Cola (vacas)': r.lote_cola, 'Total Vacas': r.total_vacas,
-    'Tanque Leche (L)': r.litros.tanque||0, 'Guachera (L)': r.litros.guachera||0,
+    'Tanque Leche (L)': r.litros.tanque||0,
+    'Tanque - Caudalímetro (L)': r.tanque_detalle?.caudalimetro||0,
+    'Tanque - Regla (L)': r.tanque_detalle?.regla||0,
+    'Tanque - Ticket Camión (L)': r.tanque_detalle?.ticket||0,
+    'Guachera (L)': r.litros.guachera||0,
     'Antibiótico (L)': r.litros.antibiotico||0, 'Calostro (L)': r.litros.calostro||0,
     'Total Litros (L)': r.total_litros,
-    'Timestamp': r.timestamp ? r.timestamp.slice(0,16).replace('T',' ') : '',
-    'Sync Sheets': r.synced ? 'Sí' : 'Pendiente',
-  }));
-  const ws1 = XLSX.utils.json_to_sheet(rows);
-  ws1['!cols'] = [{wch:12},{wch:10},{wch:16},{wch:18},{wch:18},{wch:12},{wch:18},{wch:16},{wch:18},{wch:14},{wch:16},{wch:18},{wch:14}];
-  const byMonth = {};
-  records.forEach(r => {
-    const m = r.fecha.slice(0,7);
-    if (!byMonth[m]) byMonth[m] = {tanque:0,guachera:0,antibiotico:0,calostro:0,total:0,ordenes:0,vacas:[]};
-    byMonth[m].tanque+=r.litros.tanque||0; byMonth[m].guachera+=r.litros.guachera||0;
-    byMonth[m].antibiotico+=r.litros.antibiotico||0; byMonth[m].calostro+=r.litros.calostro||0;
-    byMonth[m].total+=r.total_litros; byMonth[m].ordenes++;
-    byMonth[m].vacas.push(r.total_vacas);
-  });
-  const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const mensual = Object.keys(byMonth).sort().map(m => {
-    const d=byMonth[m]; const [y,mo]=m.split('-');
-    return {'Mes':MESES[parseInt(mo)-1]+' '+y,'Ordeñes':d.ordenes,
-      'Prom. Vacas':Math.round(d.vacas.reduce((s,v)=>s+v,0)/d.vacas.length),
-      'Tanque Leche (L)':+d.tanque.toFixed(1),'Guachera (L)':+d.guachera.toFixed(1),
-      'Antibiótico (L)':+d.antibiotico.toFixed(1),'Calostro (L)':+d.calostro.toFixed(1),
-      'TOTAL Litros (L)':+d.total.toFixed(1)};
-  }).reverse();
-  const ws2 = XLSX.utils.json_to_sheet(mensual);
-  ws2['!cols'] = [{wch:18},{wch:10},{wch:14},{wch:18},{wch:14},{wch:16},{wch:14},{wch:16}];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws1, 'Registros');
-  XLSX.utils.book_append_sheet(wb, ws2, 'Resumen Mensual');
-  XLSX.writeFile(wb, `Tambo_${new Date().toISOString().slice(0,10)}.xlsx`);
-  showToast('📊 Excel descargado');
-}
-
-/* ─── NAVEGACIÓN ─── */
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-function switchTab(tab) {
-  document.getElementById('tabRegistrar').classList.toggle('active', tab==='registrar');
-  document.getElementById('tabHistorial').classList.toggle('active', tab==='historial');
-  if (tab==='registrar') { showScreen('screen1'); }
-  else { showScreen('screenHistorial'); renderHistorial(); }
-  document.getElementById('bottomNav').classList.remove('hidden');
-}
-function showTab(tab) { switchTab(tab); }
-
-/* ─── HELPERS ─── */
-function fmtDateInput(d) { return d.toISOString().slice(0,10); }
-function formatFecha(iso) {
-  if (!iso) return '';
-  const [y,m,day]=iso.split('-');
-  const M=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return `${day} ${M[parseInt(m)-1]} ${y}`;
-}
-function formatMes(ym) {
-  const [y,m]=ym.split('-');
-  const M=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  return M[parseInt(m)-1]+' '+y;
-}
-function capFirst(s) { return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-let toastTimer=null;
-function showToast(msg) {
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
-}
-</script>
-</body>
-</html>
+    'Timestamp': r.timestamp ? r.timestamp.slice(0,16).replace('T',' ') 
