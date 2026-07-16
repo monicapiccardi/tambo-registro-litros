@@ -481,14 +481,7 @@
       <button class="numpad-btn zero"    onclick="numpadPress('0')">0</button>
       <button class="numpad-btn del"     onclick="numpadDel()">⌫</button>
     </div>
-    <!-- Campo terneros — solo visible para Guachera -->
-    <div id="ternerosField" style="display:none; margin-top:4px;">
-      <div class="card-label" style="margin-bottom:8px;">🐮 Cantidad de terneros en Guachera</div>
-      <input id="inputTerneros" class="input-large" type="number"
-             min="0" placeholder="0" inputmode="numeric"
-             style="text-align:center; font-size:28px;">
-    </div>
-    <button class="btn-main success" onclick="confirmarLitros()" style="margin-top:16px;">✓ Listo</button>
+    <button class="btn-main success" onclick="confirmarLitros()">✓ Listo</button>
   </div>
 </div>
 
@@ -537,7 +530,6 @@ let turnoActual = null;
 let panelKey    = null;
 let panelValStr = '';
 let litrosTemp  = { tanque: null, guachera: null, antibiotico: null, calostro: null };
-let ternerosGuachera = 0;
 
 /* ─── STORAGE ─── */
 const getRecords = ()   => JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
@@ -622,7 +614,6 @@ function irPantalla2() {
   if (!valid) { showToast('⚠ Completá todos los campos'); return; }
 
   litrosTemp = { tanque: null, guachera: null, antibiotico: null, calostro: null };
-  ternerosGuachera = 0;
 
   const punta = parseInt(document.getElementById('inputPunta').value) || 0;
   const cola  = parseInt(document.getElementById('inputCola').value)  || 0;
@@ -653,13 +644,11 @@ function renderDestinos() {
     const filled = val !== null;
     const btn = document.createElement('button');
     btn.className = 'destino-btn' + (filled ? ' filled' : '');
-    const extraInfo = (d.key === 'guachera' && filled && ternerosGuachera > 0)
-      ? ` · ${ternerosGuachera} ternero${ternerosGuachera !== 1 ? 's' : ''}` : '';
     btn.innerHTML = `
       <span class="d-icon">${d.icon}</span>
       <span class="d-info">
         <span class="d-name">${d.name}</span>
-        <span class="d-val">${filled ? val + ' litros cargados' + extraInfo : 'Tocar para cargar litros'}</span>
+        <span class="d-val">${filled ? val + ' litros cargados' : 'Tocar para cargar litros'}</span>
       </span>
       <span class="d-check">${filled ? '✅' : '▶'}</span>
     `;
@@ -675,14 +664,6 @@ function openPanel(key) {
   const d = DESTINOS.find(x => x.key === key);
   document.getElementById('panelTitle').textContent = d.icon + ' ' + d.name;
   updateLitrosDisplay();
-  // Mostrar/ocultar campo terneros
-  const tf = document.getElementById('ternerosField');
-  if (key === 'guachera') {
-    tf.style.display = 'block';
-    document.getElementById('inputTerneros').value = ternerosGuachera || '';
-  } else {
-    tf.style.display = 'none';
-  }
   document.getElementById('overlay').classList.add('visible');
   document.getElementById('bottomPanel').classList.add('open');
 }
@@ -709,9 +690,6 @@ function updateLitrosDisplay() {
 function confirmarLitros() {
   const val = parseFloat(panelValStr);
   litrosTemp[panelKey] = isNaN(val) ? 0 : val;
-  if (panelKey === 'guachera') {
-    ternerosGuachera = parseInt(document.getElementById('inputTerneros').value) || 0;
-  }
   closePanel();
   renderDestinos();
   document.getElementById('errDestinos').classList.remove('visible');
@@ -741,10 +719,9 @@ function guardarRegistro() {
     lote_punta:  punta,
     lote_cola:   cola,
     total_vacas: punta + cola,
-    litros:           { ...litrosTemp },
-    total_litros:     total,
-    terneros_guachera: ternerosGuachera,
-    synced:           false,
+    litros:      { ...litrosTemp },
+    total_litros: total,
+    synced:      false,
   };
 
   const records = getRecords();
@@ -760,7 +737,6 @@ function guardarRegistro() {
 
   // Reset
   litrosTemp = { tanque: null, guachera: null, antibiotico: null, calostro: null };
-  ternerosGuachera = 0;
   turnoActual = null;
   document.getElementById('btnManana').classList.remove('active');
   document.getElementById('btnTarde').classList.remove('active');
@@ -866,11 +842,7 @@ function renderHistorial() {
     const turnoIcon = r.turno === 'mañana' ? '🌅' : '🌇';
     const destinos  = DESTINOS
       .filter(d => r.litros && r.litros[d.key] > 0)
-      .map(d => {
-        const extra = (d.key === 'guachera' && r.terneros_guachera > 0)
-          ? ` · ${r.terneros_guachera} ternero${r.terneros_guachera !== 1 ? 's' : ''}` : '';
-        return `<span class="hist-tag">${d.icon} ${d.name}: <b>${r.litros[d.key]} L</b>${extra}</span>`;
-      })
+      .map(d => `<span class="hist-tag">${d.icon} ${d.name}: <b>${r.litros[d.key]} L</b></span>`)
       .join('');
     const syncHtml  = (SHEETS_URL && SHEETS_URL !== 'APPS_SCRIPT_URL_PLACEHOLDER')
       ? `<div class="hist-sync ${r.synced ? 'ok' : 'pending'}">${r.synced ? '☁️ sincronizado' : '⏳ pendiente sync'}</div>`
@@ -938,11 +910,7 @@ function renderRecords() {
           <div class="record-user">👤 ${esc(r.usuario)} · 🐮 ${r.total_vacas} vacas (P:${r.lote_punta}/C:${r.lote_cola})</div>
           <div class="record-details">
             ${DESTINOS.filter(d => r.litros && r.litros[d.key] > 0)
-              .map(d => {
-                const extra = (d.key === 'guachera' && r.terneros_guachera > 0)
-                  ? ` · ${r.terneros_guachera} ternero${r.terneros_guachera !== 1 ? 's' : ''}` : '';
-                return `<span class="record-tag hi">${d.icon} ${d.name}: ${r.litros[d.key]} L${extra}</span>`;
-              }).join('')}
+              .map(d => `<span class="record-tag hi">${d.icon} ${d.name}: ${r.litros[d.key]} L</span>`).join('')}
           </div>
           <div class="record-total">Total: ${r.total_litros.toFixed(1)} L</div>
         </div>`;
@@ -975,7 +943,6 @@ function exportarExcel() {
     'Fecha': r.fecha, 'Turno': capFirst(r.turno), 'Usuario': r.usuario,
     'Lote Punta (vacas)': r.lote_punta, 'Lote Cola (vacas)': r.lote_cola, 'Total Vacas': r.total_vacas,
     'Tanque Leche (L)': r.litros.tanque||0, 'Guachera (L)': r.litros.guachera||0,
-    'Terneros Guachera': r.terneros_guachera||0,
     'Antibiótico (L)': r.litros.antibiotico||0, 'Calostro (L)': r.litros.calostro||0,
     'Total Litros (L)': r.total_litros,
     'Timestamp': r.timestamp ? r.timestamp.slice(0,16).replace('T',' ') : '',
@@ -1046,6 +1013,142 @@ function showToast(msg) {
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
 }
+</script>
+</body>
+</html>
+n String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+</script>
+</body>
+</html>onfirm('⚠ ¿Borrar TODOS los registros? Esta acción no se puede deshacer.')) return;
+  saveRecords([]);
+  renderHistorial();
+  showToast('Datos borrados');
+}
+
+/* ─── EXPORT EXCEL ─── */
+function exportarExcel() {
+  const records = getRecords();
+  if (!records.length) { showToast('Sin registros para exportar'); return; }
+
+  const rows = records.map(r => ({
+    'Fecha':              r.fecha,
+    'Turno':              capFirst(r.turno),
+    'Usuario':            r.usuario,
+    'Lote Punta (vacas)': r.lote_punta,
+    'Lote Cola (vacas)':  r.lote_cola,
+    'Total Vacas':        r.total_vacas,
+    'Tanque Leche (L)':   r.litros.tanque      || 0,
+    'Guachera (L)':       r.litros.guachera    || 0,
+    'Antibiótico (L)':    r.litros.antibiotico || 0,
+    'Calostro (L)':       r.litros.calostro    || 0,
+    'Total Litros (L)':   r.total_litros,
+    'Timestamp':          r.timestamp ? r.timestamp.slice(0,16).replace('T',' ') : '',
+    'Sync Sheets':        r.synced ? 'Sí' : 'Pendiente',
+  }));
+
+  const ws1 = XLSX.utils.json_to_sheet(rows);
+  ws1['!cols'] = [{wch:12},{wch:10},{wch:16},{wch:18},{wch:18},{wch:12},{wch:18},{wch:16},{wch:18},{wch:14},{wch:16},{wch:18},{wch:14}];
+
+  // Resumen mensual
+  const byMonth = {};
+  records.forEach(r => {
+    const m = r.fecha.slice(0,7);
+    if (!byMonth[m]) byMonth[m] = { tanque:0,guachera:0,antibiotico:0,calostro:0,total:0,ordenes:0,vacas:[] };
+    byMonth[m].tanque      += r.litros.tanque      || 0;
+    byMonth[m].guachera    += r.litros.guachera    || 0;
+    byMonth[m].antibiotico += r.litros.antibiotico || 0;
+    byMonth[m].calostro    += r.litros.calostro    || 0;
+    byMonth[m].total       += r.total_litros;
+    byMonth[m].ordenes++;
+    byMonth[m].vacas.push(r.total_vacas);
+  });
+
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const mensual = Object.keys(byMonth).sort().map(m => {
+    const d   = byMonth[m];
+    const [y, mo] = m.split('-');
+    return {
+      'Mes':               MESES[parseInt(mo)-1] + ' ' + y,
+      'Ordeñes':           d.ordenes,
+      'Prom. Vacas':       Math.round(d.vacas.reduce((s,v)=>s+v,0)/d.vacas.length),
+      'Tanque Leche (L)':  +d.tanque.toFixed(1),
+      'Guachera (L)':      +d.guachera.toFixed(1),
+      'Antibiótico (L)':   +d.antibiotico.toFixed(1),
+      'Calostro (L)':      +d.calostro.toFixed(1),
+      'TOTAL Litros (L)':  +d.total.toFixed(1),
+    };
+  }).reverse();
+
+  const ws2 = XLSX.utils.json_to_sheet(mensual);
+  ws2['!cols'] = [{wch:18},{wch:10},{wch:14},{wch:18},{wch:14},{wch:16},{wch:14},{wch:16}];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws1, 'Registros');
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumen Mensual');
+  XLSX.writeFile(wb, `Tambo_${new Date().toISOString().slice(0,10)}.xlsx`);
+  showToast('📊 Excel descargado');
+}
+
+/* ─── NAVEGACIÓN ─── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function switchTab(tab) {
+  document.getElementById('tabRegistrar').classList.toggle('active', tab === 'registrar');
+  document.getElementById('tabHistorial').classList.toggle('active', tab === 'historial');
+
+  if (tab === 'registrar') {
+    showScreen('screen1');
+  } else {
+    showScreen('screenHistorial');
+    renderHistorial();
+  }
+  document.getElementById('bottomNav').classList.remove('hidden');
+}
+
+// alias para onclick en HTML
+function showTab(tab) { switchTab(tab); }
+
+/* ─── HELPERS ─── */
+function fmtDateInput(d) { return d.toISOString().slice(0,10); }
+
+function formatFecha(iso) {
+  if (!iso) return '';
+  const [y, m, day] = iso.split('-');
+  const M = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${day} ${M[parseInt(m)-1]} ${y}`;
+}
+
+function formatMes(ym) {
+  const [y, m] = ym.split('-');
+  const M = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  return M[parseInt(m)-1] + ' ' + y;
+}
+
+function capFirst(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
 </script>
 </body>
 </html>
