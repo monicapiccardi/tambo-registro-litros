@@ -97,6 +97,7 @@
       font-size: 18px; font-weight: 700; color: var(--gray-dark);
       cursor: pointer; text-align: center; transition: all 0.18s;
       display: flex; flex-direction: column; align-items: center; gap: 6px;
+      touch-action: manipulation;
     }
     .toggle-btn .icon { font-size: 30px; }
     .toggle-btn.active { border-color: var(--green); background: var(--green-pale); color: var(--green-dark); }
@@ -359,11 +360,11 @@
     <div class="card">
       <div class="card-label">🕐 Turno</div>
       <div class="toggle-group">
-        <button class="toggle-btn" id="btnManana" onclick="selectTurno('mañana')">
+        <button class="toggle-btn" id="btnManana" data-turno="mañana" onclick="selectTurno(this.dataset.turno)">
           <span class="icon">🌅</span>
           <span>Ordeñe<br>Mañana</span>
         </button>
-        <button class="toggle-btn" id="btnTarde" onclick="selectTurno('tarde')">
+        <button class="toggle-btn" id="btnTarde" data-turno="tarde" onclick="selectTurno(this.dataset.turno)">
           <span class="icon">🌇</span>
           <span>Ordeñe<br>Tarde</span>
         </button>
