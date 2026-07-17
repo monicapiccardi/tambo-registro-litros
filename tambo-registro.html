@@ -98,7 +98,9 @@
       cursor: pointer; text-align: center; transition: all 0.18s;
       display: flex; flex-direction: column; align-items: center; gap: 6px;
       touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
+    .toggle-btn * { pointer-events: none; }
     .toggle-btn .icon { font-size: 30px; }
     .toggle-btn.active { border-color: var(--green); background: var(--green-pale); color: var(--green-dark); }
     .toggle-btn.error  { border-color: var(--danger); }
@@ -360,11 +362,11 @@
     <div class="card">
       <div class="card-label">🕐 Turno</div>
       <div class="toggle-group">
-        <button class="toggle-btn" id="btnManana" data-turno="mañana" onclick="selectTurno(this.dataset.turno)">
+        <button class="toggle-btn" id="btnManana" data-turno="mañana">
           <span class="icon">🌅</span>
           <span>Ordeñe<br>Mañana</span>
         </button>
-        <button class="toggle-btn" id="btnTarde" data-turno="tarde" onclick="selectTurno(this.dataset.turno)">
+        <button class="toggle-btn" id="btnTarde" data-turno="tarde">
           <span class="icon">🌇</span>
           <span>Ordeñe<br>Tarde</span>
         </button>
@@ -570,6 +572,18 @@ window.addEventListener('DOMContentLoaded', () => {
   renderUserChips();
   // Reintentar sync de pendientes al conectar
   window.addEventListener('online', retrySyncPending);
+
+  // Botones de turno: touchend + click para máxima compatibilidad móvil
+  ['btnManana', 'btnTarde'].forEach(id => {
+    const btn = document.getElementById(id);
+    btn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      selectTurno(this.dataset.turno);
+    }, { passive: false });
+    btn.addEventListener('click', function(e) {
+      selectTurno(this.dataset.turno);
+    });
+  });
 });
 
 /* ─── USUARIOS ─── */
