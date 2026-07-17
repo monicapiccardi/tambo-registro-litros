@@ -490,6 +490,26 @@
   </div>
 </div>
 
+<!-- Panel especial: Guachera -->
+<div class="bottom-panel" id="guacheraPanel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <div class="panel-title">🍼 Uso p/Guachera</div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body">
+    <div class="field-group">
+      <label class="card-label">🍼 Litros Guachera (L)</label>
+      <input class="input-large" id="gchLitros" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0">
+    </div>
+    <div class="field-group" style="margin-top:16px">
+      <label class="card-label">🐄 Cantidad de Terneros</label>
+      <input class="input-large" id="gchTerneros" type="number" inputmode="numeric" min="0" step="1" placeholder="0">
+    </div>
+    <button class="btn-main success" style="margin-top:24px" onclick="confirmarGuachera()">✓ Confirmar</button>
+  </div>
+</div>
+
 <!-- Panel especial: Tanque Leche -->
 <div class="bottom-panel" id="tanquePanel">
   <div class="panel-handle"></div>
@@ -555,9 +575,10 @@ const DESTINOS = [
 ];
 
 /* ─── ESTADO ─── */
-let turnoActual = null;
-let panelKey    = null;
-let panelValStr = '';
+let turnoActual      = null;
+let panelKey         = null;
+let panelValStr      = '';
+let ternerosGuachera = 0;
 let litrosTemp  = { tanque: null, tanque_detalle: null, guachera: null, antibiotico: null, calostro: null };
 
 /* ─── STORAGE ─── */
@@ -657,6 +678,7 @@ function irPantalla2() {
   if (!valid) { showToast('⚠ Completá todos los campos'); return; }
 
   litrosTemp = { tanque: null, tanque_detalle: null, guachera: null, antibiotico: null, calostro: null };
+  ternerosGuachera = 0;
 
   const punta = parseInt(document.getElementById('inputPunta').value) || 0;
   const cola  = parseInt(document.getElementById('inputCola').value)  || 0;
@@ -685,13 +707,17 @@ function renderDestinos() {
   DESTINOS.forEach(d => {
     const val = litrosTemp[d.key];
     const filled = val !== null;
+    let dVal = filled ? val + ' litros cargados' : 'Tocar para cargar litros';
+    if (d.key === 'guachera' && filled && ternerosGuachera > 0) {
+      dVal += ` · ${ternerosGuachera} ternero(s)`;
+    }
     const btn = document.createElement('button');
     btn.className = 'destino-btn' + (filled ? ' filled' : '');
     btn.innerHTML = `
       <span class="d-icon">${d.icon}</span>
       <span class="d-info">
         <span class="d-name">${d.name}</span>
-        <span class="d-val">${filled ? val + ' litros cargados' : 'Tocar para cargar litros'}</span>
+        <span class="d-val">${dVal}</span>
       </span>
       <span class="d-check">${filled ? '✅' : '▶'}</span>
     `;
@@ -712,6 +738,11 @@ function openPanel(key) {
     document.getElementById('tqRegla').value        = t.regla        != null ? t.regla        : '';
     document.getElementById('tqTicket').value       = t.ticket       != null ? t.ticket       : '';
     document.getElementById('tanquePanel').classList.add('open');
+  } else if (key === 'guachera') {
+    // Panel especial Guachera (litros + terneros)
+    document.getElementById('gchLitros').value   = litrosTemp.guachera != null ? litrosTemp.guachera : '';
+    document.getElementById('gchTerneros').value = ternerosGuachera > 0 ? ternerosGuachera : '';
+    document.getElementById('guacheraPanel').classList.add('open');
   } else {
     panelValStr = litrosTemp[key] !== null ? String(litrosTemp[key]) : '';
     const d = DESTINOS.find(x => x.key === key);
@@ -724,7 +755,19 @@ function closePanel() {
   document.getElementById('overlay').classList.remove('visible');
   document.getElementById('bottomPanel').classList.remove('open');
   document.getElementById('tanquePanel').classList.remove('open');
+  document.getElementById('guacheraPanel').classList.remove('open');
   panelKey = null;
+}
+
+/* ─── CONFIRMAR GUACHERA ─── */
+function confirmarGuachera() {
+  const l = parseFloat(document.getElementById('gchLitros').value)   || 0;
+  const t = parseInt(document.getElementById('gchTerneros').value)    || 0;
+  litrosTemp.guachera  = l;
+  ternerosGuachera     = t;
+  closePanel();
+  renderDestinos();
+  document.getElementById('errDestinos').classList.remove('visible');
 }
 
 /* ─── CONFIRMAR TANQUE ─── */
@@ -781,18 +824,19 @@ function guardarRegistro() {
                 + (parseFloat(litrosTemp.calostro)    || 0);
 
   const registro = {
-    id:          Date.now().toString(),
-    timestamp:   new Date().toISOString(),
+    id:                Date.now().toString(),
+    timestamp:         new Date().toISOString(),
     fecha,
-    turno:       turnoActual,
+    turno:             turnoActual,
     usuario,
-    lote_punta:  punta,
-    lote_cola:   cola,
-    total_vacas: punta + cola,
-    litros:      { tanque: litrosTemp.tanque, guachera: litrosTemp.guachera, antibiotico: litrosTemp.antibiotico, calostro: litrosTemp.calostro },
-    tanque_detalle: litrosTemp.tanque_detalle || null,
-    total_litros: total,
-    synced:      false,
+    lote_punta:        punta,
+    lote_cola:         cola,
+    total_vacas:       punta + cola,
+    litros:            { tanque: litrosTemp.tanque, guachera: litrosTemp.guachera, antibiotico: litrosTemp.antibiotico, calostro: litrosTemp.calostro },
+    tanque_detalle:    litrosTemp.tanque_detalle || null,
+    terneros_guachera: ternerosGuachera,
+    total_litros:      total,
+    synced:            false,
   };
 
   const records = getRecords();
@@ -808,6 +852,7 @@ function guardarRegistro() {
 
   // Reset
   litrosTemp = { tanque: null, tanque_detalle: null, guachera: null, antibiotico: null, calostro: null };
+  ternerosGuachera = 0;
   turnoActual = null;
   document.getElementById('btnManana').classList.remove('active');
   document.getElementById('btnTarde').classList.remove('active');
@@ -959,7 +1004,7 @@ function renderHistorial() {
               ].filter(Boolean).join(' · ');
               return `<span class="hist-tag">${d.icon} ${d.name}: <b>${litros[d.key]} L</b>${det ? '<br><small style="font-weight:400;opacity:0.8">' + det + '</small>' : ''}</span>`;
             }
-            return `<span class="hist-tag">${d.icon} ${d.name}: <b>${litros[d.key]} L</b></span>`;
+            return `<span class="hist-tag">${d.icon} ${d.name}: <b>${litros[d.key]} L</b>${d.key === 'guachera' && r.terneros_guachera ? ` · ${r.terneros_guachera} ternero(s)` : ''}</span>`;
           })
           .join('');
         const syncHtml = (SHEETS_URL && SHEETS_URL !== 'APPS_SCRIPT_URL_PLACEHOLDER')
