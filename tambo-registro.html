@@ -773,7 +773,10 @@ function guardarRegistro() {
   const fecha   = document.getElementById('inputFecha').value;
   const punta   = parseInt(document.getElementById('inputPunta').value) || 0;
   const cola    = parseInt(document.getElementById('inputCola').value)  || 0;
-  const total   = Object.values(litrosTemp).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+  const total   = (parseFloat(litrosTemp.tanque)      || 0)
+                + (parseFloat(litrosTemp.guachera)    || 0)
+                + (parseFloat(litrosTemp.antibiotico) || 0)
+                + (parseFloat(litrosTemp.calostro)    || 0);
 
   const registro = {
     id:          Date.now().toString(),
