@@ -866,90 +866,104 @@ function renderHistorial() {
     return;
   }
 
-  let html = '';
+  try {
+    let html = '';
 
-  // Banner sync
-  if (SHEETS_URL && SHEETS_URL !== 'APPS_SCRIPT_URL_PLACEHOLDER') {
-    if (pending > 0) {
-      html += `<div class="sync-banner warn">
-        ☁️ <span class="count">${pending}</span> pendiente${pending>1?'s':''} de sync con Sheets
-        <button onclick="retrySyncPending()" style="margin-left:auto;background:var(--warning);color:white;border:none;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:13px">Reintentar</button>
-      </div>`;
-    } else {
-      html += `<div class="sync-banner">✅ Todo sincronizado con Google Sheets</div>`;
+    // Banner sync
+    if (SHEETS_URL && SHEETS_URL !== 'APPS_SCRIPT_URL_PLACEHOLDER') {
+      if (pending > 0) {
+        html += `<div class="sync-banner warn">
+          ☁️ <span class="count">${pending}</span> pendiente${pending>1?'s':''} de sync con Sheets
+          <button onclick="retrySyncPending()" style="margin-left:auto;background:var(--warning);color:white;border:none;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:13px">Reintentar</button>
+        </div>`;
+      } else {
+        html += `<div class="sync-banner">✅ Todo sincronizado con Google Sheets</div>`;
+      }
     }
-  }
 
-  // Resumen mes actual
-  const mesActual = new Date().toISOString().slice(0,7);
-  const delMes = all.filter(r => r.fecha.startsWith(mesActual));
-  if (delMes.length) {
-    const totalMes = delMes.reduce((s,r) => s + r.total_litros, 0);
-    const sumDest  = { tanque:0, guachera:0, antibiotico:0, calostro:0 };
-    delMes.forEach(r => DESTINOS.forEach(d => { sumDest[d.key] += (r.litros[d.key] || 0); }));
-    const destTags = DESTINOS
-      .filter(d => sumDest[d.key] > 0)
-      .map(d => `<span class="hist-tag">${d.icon} ${sumDest[d.key].toFixed(1)} L</span>`)
-      .join('');
+    // Resumen mes actual
+    const mesActual = new Date().toISOString().slice(0,7);
+    const delMes = all.filter(r => r.fecha && r.fecha.startsWith(mesActual));
+    if (delMes.length) {
+      const totalMes = delMes.reduce((s,r) => s + (r.total_litros || 0), 0);
+      const sumDest  = { tanque:0, guachera:0, antibiotico:0, calostro:0 };
+      delMes.forEach(r => DESTINOS.forEach(d => { sumDest[d.key] += ((r.litros && r.litros[d.key]) || 0); }));
+      const destTags = DESTINOS
+        .filter(d => sumDest[d.key] > 0)
+        .map(d => `<span class="hist-tag">${d.icon} ${sumDest[d.key].toFixed(1)} L</span>`)
+        .join('');
+
+      html += `
+        <div class="card">
+          <div class="card-label">📊 ${formatMes(mesActual)}</div>
+          <div class="stats-grid">
+            <div class="stat-item"><div class="s-num">${totalMes.toFixed(1)}</div><div class="s-label">Litros totales</div></div>
+            <div class="stat-item"><div class="s-num">${delMes.length}</div><div class="s-label">Ordeñes</div></div>
+          </div>
+          <div class="hist-destinos mt-12">${destTags}</div>
+        </div>`;
+    }
+
+    // Cards últimos 20
+    last20.forEach(r => {
+      try {
+        const turnoIcon = r.turno === 'mañana' ? '🌅' : '🌇';
+        const litros    = r.litros || {};
+        const destinos  = DESTINOS
+          .filter(d => litros[d.key] > 0)
+          .map(d => {
+            if (d.key === 'tanque' && r.tanque_detalle) {
+              const td = r.tanque_detalle;
+              const det = [
+                td.caudalimetro ? `📟 ${td.caudalimetro} L` : '',
+                td.regla        ? `📏 ${td.regla} L`        : '',
+                td.ticket       ? `🧾 ${td.ticket} L`       : '',
+              ].filter(Boolean).join(' · ');
+              return `<span class="hist-tag">${d.icon} ${d.name}: <b>${litros[d.key]} L</b>${det ? '<br><small style="font-weight:400;opacity:0.8">' + det + '</small>' : ''}</span>`;
+            }
+            return `<span class="hist-tag">${d.icon} ${d.name}: <b>${litros[d.key]} L</b></span>`;
+          })
+          .join('');
+        const syncHtml = (SHEETS_URL && SHEETS_URL !== 'APPS_SCRIPT_URL_PLACEHOLDER')
+          ? `<div class="hist-sync ${r.synced ? 'ok' : 'pending'}">${r.synced ? '☁️ sincronizado' : '⏳ pendiente sync'}</div>`
+          : '';
+        const totalL = (r.total_litros || 0).toFixed(1);
+
+        html += `
+          <div class="hist-card">
+            <div class="hist-top">
+              <span class="hist-fecha">${formatFecha(r.fecha || '')}</span>
+              <span class="hist-turno">${turnoIcon} ${capFirst(r.turno || '')}</span>
+            </div>
+            <div class="hist-meta">👤 ${esc(r.usuario || '')} &nbsp;|&nbsp; 🐮 ${r.total_vacas || 0} vacas (P:${r.lote_punta || 0}/C:${r.lote_cola || 0})</div>
+            <div class="hist-destinos">${destinos || '<span style="color:var(--gray);font-size:14px">Sin destinos cargados</span>'}</div>
+            <div class="hist-total">${totalL} L total</div>
+            ${syncHtml}
+          </div>`;
+      } catch(e) {
+        html += `<div class="hist-card" style="border:2px solid red;padding:12px;font-size:13px;color:red">Error en registro: ${e.message}</div>`;
+      }
+    });
+
+    if (all.length > 20) {
+      html += `<button class="btn-main secondary sm" onclick="showScreen('screenRecords');renderRecords()">
+        Ver todos los ${all.length} registros →
+      </button>`;
+    }
 
     html += `
-      <div class="card">
-        <div class="card-label">📊 ${formatMes(mesActual)}</div>
-        <div class="stats-grid">
-          <div class="stat-item"><div class="s-num">${totalMes.toFixed(1)}</div><div class="s-label">Litros totales</div></div>
-          <div class="stat-item"><div class="s-num">${delMes.length}</div><div class="s-label">Ordeñes</div></div>
-        </div>
-        <div class="hist-destinos mt-12">${destTags}</div>
-      </div>`;
-  }
+      <button class="btn-main sm" onclick="exportarExcel()">📊 Exportar a Excel</button>
+      <button class="btn-main danger sm" onclick="confirmarBorrarTodo()">🗑 Borrar todos los datos</button>
+    `;
 
-  // Cards últimos 20
-  last20.forEach(r => {
-    const turnoIcon = r.turno === 'mañana' ? '🌅' : '🌇';
-    const destinos  = DESTINOS
-      .filter(d => r.litros && r.litros[d.key] > 0)
-      .map(d => {
-        if (d.key === 'tanque' && r.tanque_detalle) {
-          const td = r.tanque_detalle;
-          const det = [
-            td.caudalimetro ? `📟 ${td.caudalimetro} L` : '',
-            td.regla        ? `📏 ${td.regla} L`        : '',
-            td.ticket       ? `🧾 ${td.ticket} L`       : '',
-          ].filter(Boolean).join(' · ');
-          return `<span class="hist-tag">${d.icon} ${d.name}: <b>${r.litros[d.key]} L</b>${det ? '<br><small style="font-weight:400;opacity:0.8">' + det + '</small>' : ''}</span>`;
-        }
-        return `<span class="hist-tag">${d.icon} ${d.name}: <b>${r.litros[d.key]} L</b></span>`;
-      })
-      .join('');
-    const syncHtml  = (SHEETS_URL && SHEETS_URL !== 'APPS_SCRIPT_URL_PLACEHOLDER')
-      ? `<div class="hist-sync ${r.synced ? 'ok' : 'pending'}">${r.synced ? '☁️ sincronizado' : '⏳ pendiente sync'}</div>`
-      : '';
-
-    html += `
-      <div class="hist-card">
-        <div class="hist-top">
-          <span class="hist-fecha">${formatFecha(r.fecha)}</span>
-          <span class="hist-turno">${turnoIcon} ${capFirst(r.turno)}</span>
-        </div>
-        <div class="hist-meta">👤 ${esc(r.usuario)} &nbsp;|&nbsp; 🐮 ${r.total_vacas} vacas (P:${r.lote_punta}/C:${r.lote_cola})</div>
-        <div class="hist-destinos">${destinos || '<span style="color:var(--gray);font-size:14px">Sin destinos cargados</span>'}</div>
-        <div class="hist-total">${r.total_litros.toFixed(1)} L total</div>
-        ${syncHtml}
-      </div>`;
-  });
-
-  if (all.length > 20) {
-    html += `<button class="btn-main secondary sm" onclick="showScreen('screenRecords');renderRecords()">
-      Ver todos los ${all.length} registros →
-    </button>`;
-  }
-
-  html += `
+    body.innerHTML = html;
+  } catch(err) {
+    body.innerHTML = `<div class="card" style="border:2px solid red;padding:16px;color:red;font-size:14px">
+      <b>Error al cargar historial:</b><br>${err.message}
+    </div>
     <button class="btn-main sm" onclick="exportarExcel()">📊 Exportar a Excel</button>
-    <button class="btn-main danger sm" onclick="confirmarBorrarTodo()">🗑 Borrar todos los datos</button>
-  `;
-
-  body.innerHTML = html;
+    <button class="btn-main danger sm" onclick="confirmarBorrarTodo()">🗑 Borrar todos los datos</button>`;
+  }
 }
 
 /* ─── PANTALLA REGISTROS COMPLETA ─── */
