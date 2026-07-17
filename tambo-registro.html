@@ -773,7 +773,7 @@ function guardarRegistro() {
   const fecha   = document.getElementById('inputFecha').value;
   const punta   = parseInt(document.getElementById('inputPunta').value) || 0;
   const cola    = parseInt(document.getElementById('inputCola').value)  || 0;
-  const total   = Object.values(litrosTemp).reduce((s, v) => s + (v || 0), 0);
+  const total   = Object.values(litrosTemp).reduce((s, v) => s + (parseFloat(v) || 0), 0);
 
   const registro = {
     id:          Date.now().toString(),
@@ -885,9 +885,9 @@ function renderHistorial() {
     const mesActual = new Date().toISOString().slice(0,7);
     const delMes = all.filter(r => r.fecha && r.fecha.startsWith(mesActual));
     if (delMes.length) {
-      const totalMes = delMes.reduce((s,r) => s + (r.total_litros || 0), 0);
+      const totalMes = delMes.reduce((s,r) => s + (parseFloat(r.total_litros) || 0), 0);
       const sumDest  = { tanque:0, guachera:0, antibiotico:0, calostro:0 };
-      delMes.forEach(r => DESTINOS.forEach(d => { sumDest[d.key] += ((r.litros && r.litros[d.key]) || 0); }));
+      delMes.forEach(r => DESTINOS.forEach(d => { sumDest[d.key] += (parseFloat(r.litros && r.litros[d.key]) || 0); }));
       const destTags = DESTINOS
         .filter(d => sumDest[d.key] > 0)
         .map(d => `<span class="hist-tag">${d.icon} ${sumDest[d.key].toFixed(1)} L</span>`)
@@ -927,7 +927,7 @@ function renderHistorial() {
         const syncHtml = (SHEETS_URL && SHEETS_URL !== 'APPS_SCRIPT_URL_PLACEHOLDER')
           ? `<div class="hist-sync ${r.synced ? 'ok' : 'pending'}">${r.synced ? '☁️ sincronizado' : '⏳ pendiente sync'}</div>`
           : '';
-        const totalL = (r.total_litros || 0).toFixed(1);
+        const totalL = (parseFloat(r.total_litros) || 0).toFixed(1);
 
         html += `
           <div class="hist-card">
