@@ -570,6 +570,8 @@ const saveUsers  = u    => localStorage.setItem(USERS_KEY, JSON.stringify(u));
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('inputFecha').value = fmtDateInput(new Date());
   renderUserChips();
+  // Corregir registros viejos con total_litros corrupto en localStorage
+  fixCorruptedRecords();
   // Reintentar sync de pendientes al conectar
   window.addEventListener('online', retrySyncPending);
 
@@ -815,15 +817,48 @@ function guardarRegistro() {
 }
 
 /* ═══════════════════════════════════════
+   REPARAR REGISTROS CORRUPTOS EN localStorage
+═══════════════════════════════════════ */
+function calcTotalFromLitros(litros) {
+  if (!litros) return 0;
+  return (parseFloat(litros.tanque)      || 0)
+       + (parseFloat(litros.guachera)    || 0)
+       + (parseFloat(litros.antibiotico) || 0)
+       + (parseFloat(litros.calostro)    || 0);
+}
+function fixCorruptedRecords() {
+  const records = getRecords();
+  let changed = false;
+  records.forEach(r => {
+    const t = parseFloat(r.total_litros);
+    if (!isFinite(t)) {
+      // total_litros está corrupto — recalcular desde litros individuales
+      r.total_litros = calcTotalFromLitros(r.litros);
+      r.synced = false; // forzar re-sync con el valor correcto
+      changed = true;
+    }
+  });
+  if (changed) saveRecords(records);
+}
+
+/* ═══════════════════════════════════════
    GOOGLE SHEETS — sincronización
 ═══════════════════════════════════════ */
 async function syncToSheets(registro) {
   if (!SHEETS_URL || SHEETS_URL === 'APPS_SCRIPT_URL_PLACEHOLDER') return;
+  // Sanear total_litros por si viene de registro viejo corrupto
+  const reg = { ...registro };
+  const t = parseFloat(reg.total_litros);
+  if (!isFinite(t)) {
+    reg.total_litros = calcTotalFromLitros(reg.litros);
+  } else {
+    reg.total_litros = t;
+  }
   try {
     const res = await fetch(SHEETS_URL, {
       method:  'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body:    JSON.stringify(registro),
+      body:    JSON.stringify(reg),
     });
     const json = await res.json();
     if (json.success) {
